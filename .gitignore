@@ -1,0 +1,6 @@
+__pycache__/
+backup_agent_model.py
+backup_verb_template.py
+venv/
+.idea/
+Thesis.2.0/
