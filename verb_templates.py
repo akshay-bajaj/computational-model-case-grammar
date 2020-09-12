@@ -1,6 +1,8 @@
 import data
 import random
+
 verb_list = ["Move", "Give", "Take", "Touch", "Drop", "Lift", "Put", "Bring"]
+
 
 # How can constructions be created?
 # All possible instances initialised to not privilege one construction over another? X << verb >> Y and Y << verb >> X
@@ -9,20 +11,9 @@ verb_list = ["Move", "Give", "Take", "Touch", "Drop", "Lift", "Put", "Bring"]
 class Verb:
 
     def __init__(self, *args):
-        # self.locations = []
-        # self.agents = []
-        # self.location3 = None
-        # self.item3 = None
-        # self.item3_parsed = None
-        # self.location3_parsed = None
-
-
-
         # common variables
         self.action_verb = None
         self.sentence = []
-
-        # self.item1 = []
 
         # Variables for speaker-role to utilised and use internal representation to linguistic representation
         self.verb_subject = None
@@ -66,8 +57,87 @@ class Verb:
         self.processed_locations = []
         self.unprocessed_parsed = []
 
-# Speaker role methods:
-    # 1. create_sentence() creates a randomised sentence structure to simulate lexical language
+    # Common methods used in both contexts
+
+    # 1. Parse a sentence to solve predicate variable inequality at random to simulate a 'guess'
+    def parse_sentence_guess(self, *args):
+        list_of_names = []
+        list_of_items = []
+        list_of_locations = []
+
+        for things in args:
+            for word in things:
+                if word in data.namesAndObjects.list_of_names:
+                    list_of_names.append(word)
+
+                elif word in data.namesAndObjects.list_of_items:
+                    list_of_items.append(word)
+
+                elif word in data.namesAndObjects.list_of_locations:
+                    list_of_locations.append(word)
+
+                else:
+                    self.unprocessed_parsed.append(word)
+
+            # update values of self.subject, self.object1 etc to parsed values
+            while list_of_names:
+                if not self.verb_subject_parsed:
+                    self.verb_subject_parsed = random.choice(list_of_names)
+                    list_of_names.remove(self.verb_subject_parsed)
+
+                elif not self.verb_object1_parsed:
+                    self.verb_object1_parsed = random.choice(list_of_names)
+                    list_of_names.remove(self.verb_object1_parsed)
+
+                elif not self.verb_object2_parsed:
+                    self.verb_object2_parsed = random.choice(list_of_names)
+                    list_of_names.remove(self.verb_object2_parsed)
+
+            while list_of_items:
+                if not self.item1_parsed:
+                    self.item1_parsed = random.choice(list_of_items)
+                    list_of_items.remove(self.item1_parsed)
+
+                else:
+                    self.item2_parsed = random.choice(list_of_items)
+                    list_of_items.remove(self.item2_parsed)
+
+            while list_of_locations:
+                if not self.location1_parsed:
+                    self.location1_parsed = random.choice(list_of_locations)
+                    list_of_locations.remove(self.location1_parsed)
+                else:
+                    self.location2_parsed = random.choice(list_of_locations)
+                    list_of_locations.remove(self.location2_parsed)
+
+    # 2. Check if parsed values from sentence match with values known from the global event truth
+    def check_agreement(self):
+        if self.verb_subject != self.verb_subject_parsed or self.verb_object1 != self.verb_object1_parsed or self.verb_object2 != self.verb_object2_parsed or self.location1 != self.location1_parsed or self.location2 != self.location2_parsed or self.item1 != self.item1_parsed or self.item2 != self.item2_parsed:
+            return 0
+        else:
+            return 1
+
+    # Speaker role methods:
+
+    # 1. Create a new marker for a role when ambiguity detected and no markers exist in the dictionary
+    # Returns a two alphabet string value
+    def create_new_case_marker(self):
+        alphabets = 'abcdefghijklmnopqrstuvwxyz'
+        random_case_marker = "".join(random.sample(alphabets, 2))
+        return random_case_marker
+
+    # 2. initially used to set parameters based on external world event
+    def set_parameters_from_world_event(self, world_event_object):
+        self.verb_subject = world_event_object.name1
+        self.verb_object1 = world_event_object.name2
+        self.verb_object2 = world_event_object.name3
+
+        self.item1 = world_event_object.item1
+        self.item2 = world_event_object.item2
+        self.location1 = world_event_object.location1
+        self.location2 = world_event_object.location2
+
+    # 3. create_sentence() creates a randomised sentence structure to simulate lexical language
     def create_sentence(self):
         if self.verb_subject:
             self.sentence.append(self.verb_subject)
@@ -80,18 +150,40 @@ class Verb:
             self.sentence.append(self.location1)
         if self.location2:
             self.sentence.append(self.location2)
-        # if self.location3:
-        #     self.sentence.append(self.location3)
 
         if self.item1:
             self.sentence.append(self.item1)
         if self.item2:
             self.sentence.append(self.item2)
-        # if self.item3:
-        #     self.sentence.append(self.item3)
-
-
         self.sentence = random.sample(self.sentence, len(self.sentence))
+
+    # 4. If check agreement is false, locate the roles which have potential for ambiguity and returns them in a list
+    def find_ambiguous_roles(self):
+        ambiguous_roles = []
+        if self.verb_subject != self.verb_subject_parsed:
+            ambiguous_roles.append("verb_subject")
+        if self.verb_object1 != self.verb_object1_parsed:
+            ambiguous_roles.append("verb_object1")
+        if self.verb_object2 != self.verb_object2_parsed:
+            ambiguous_roles.append("verb_object2")
+
+        if self.location1 != self.location1_parsed:
+            ambiguous_roles.append("location1")
+        if self.location2 != self.location2_parsed:
+            ambiguous_roles.append("Location2")
+
+        if self.item1 != self.item1_parsed:
+            ambiguous_roles.append("item1")
+        if self.item2 != self.item2_parsed:
+            ambiguous_roles.append("item2")
+        return ambiguous_roles
+
+    # 5. If a case marker is needed to be added, sentence is amended by passing the marker to be used and the
+    # sentence component to be marked (verb_subject/item1 etc)
+    def apply_case_marker_correction(self, marker, component_to_mark):
+        for index in range(len(self.sentence)):
+            if self.sentence[index] == eval("self." + component_to_mark):
+                self.sentence.insert(index+1, marker)
 
     # print_utterance displays the composed sentence on the screen. Only used for testing purposes
     def print_utterance(self):
@@ -126,7 +218,7 @@ class Verb:
     def return_object(self):
         return self.action_verb, self.verb_subject, self.item1, self.verb_object1, self.location1, self.unprocessed
 
-# To-do methods
+    # To-do methods
 
     # 1. A method to call to apply the right construction to improve communication success
     # 2. Choose between word order serialisation and using case markers probabilistically
@@ -135,91 +227,20 @@ class Verb:
     # word order serialisation & case markers
     # def incorporate_assertion(self, asserted_value):
 
-# Listener role methods
-    # Parse a sentence to solve predicate variable inequality at random to simulate a 'guess'
-    def parse_sentence_guess(self, *args):
-        list_of_names = []
-        list_of_items = []
-        list_of_locations = []
+    # Listener role methods
 
-        for things in args:
-            for word in things:
-                if word in data.namesAndObjects.list_of_names:
-                    list_of_names.append(word)
+    # To-do methods
+    #     Parse and look for unknown words that are case markers. If found and context of them understood,
+    #     add them to marker for the respective action-verb-object.
 
-                elif word in data.namesAndObjects.list_of_objects:
-                    list_of_items.append(word)
-
-                elif word in data.namesAndObjects.list_of_locations:
-                    list_of_locations.append(word)
-
-                else:
-                    self.unprocessed_parsed.append(word)
-
-            # update values of self.subject, self.object1 etc to parsed values
-            while list_of_names:
-                if not self.verb_subject_parsed:
-                    self.verb_subject_parsed = random.choice(list_of_names)
-                    list_of_names.remove(self.verb_subject_parsed)
-
-                elif not self.verb_object1_parsed:
-                    self.verb_object1_parsed = random.choice(list_of_names)
-                    list_of_names.remove(self.verb_object1_parsed)
-
-                elif not self.verb_object2_parsed:
-                    self.verb_object2_parsed = random.choice(list_of_names)
-                    list_of_names.remove(self.verb_object2_parsed)
-
-            while list_of_items:
-                if not self.item1_parsed:
-                    self.item1_parsed = random.choice(list_of_items)
-                    list_of_items.remove(self.item1_parsed)
-
-                # elif not self.item2_parsed:
-                else:
-                    self.item2_parsed = random.choice(list_of_items)
-                    list_of_items.remove(self.item2_parsed)
-
-            while list_of_locations:
-                if not self.location1_parsed:
-                    self.location1_parsed = random.choice(list_of_locations)
-                    list_of_locations.remove(self.location1_parsed)
-                else:
-                    self.location2_parsed = random.choice(list_of_locations)
-                    list_of_locations.remove(self.location2_parsed)
-
-            # for stuff in things:
-            #     if stuff in data.namesAndObjects.list_of_names and not self.verb_subject:
-            #         self.verb_subject = stuff
-            #     elif stuff in data.namesAndObjects.list_of_names and self.verb_subject and not self.verb_object1:
-            #         self.verb_object1 = stuff
-            #     elif stuff in data.namesAndObjects.list_of_objects and not self.item1:
-            #         self.item1 = stuff
-            #     elif stuff in data.namesAndObjects.list_of_locations and not self.location1:
-            #         self.location1 = stuff
-            #     else:
-            #         self.unprocessed.append(stuff)
-
-
-    def check_agreement(self):
-        self.compare_sentence()
-        if self.verb_subject != self.verb_subject_parsed or self.verb_object1 != self.verb_object1_parsed or self.verb_object2 != self.verb_object2_parsed or self.location1 != self.location1_parsed or self.location2 != self.location2_parsed or self.item1 != self.item1_parsed or self.item2 != self.item2_parsed:
-            return 0
-        else:
-            return 1
-
-# To-do methods
-#     Parse and look for unknown words that are case markers. If found and context of them understood,
-#     add them to marker for the respective action-verb-object.
-
-# Following two methods are redundant and possibly not required
+    # Following two methods are redundant and possibly not required
     def label_unprocessed(self):
         for stuff in self.unprocessed:
             if stuff in data.namesAndObjects.list_of_names:
                 self.unprocessed_labeled[stuff] = "name"
             elif stuff in data.namesAndObjects.list_of_locations:
                 self.unprocessed_labeled[stuff] = "location"
-            elif stuff in data.namesAndObjects.list_of_objects:
+            elif stuff in data.namesAndObjects.list_of_items:
                 self.unprocessed_labeled[stuff] = "object"
             else:
                 self.unprocessed_labeled[stuff] = "unknown"
@@ -228,28 +249,28 @@ class Verb:
         for things in self.sentence:
             if things in data.namesAndObjects.list_of_names:
                 self.processed_names.append(things)
-            elif things in data.namesAndObjects.list_of_objects:
+            elif things in data.namesAndObjects.list_of_items:
                 self.processed_objects.append(things)
             elif things in data.namesAndObjects.list_of_locations:
                 self.processed_locations.append(things)
 
-    def compare_sentence(self):
-        for word in self.sentence:
-            if word in data.namesAndObjects.list_of_names and not self.verb_subject_parsed:
-                self.verb_subject_parsed = word
-            elif word in data.namesAndObjects.list_of_names and not self.verb_object1_parsed:
-                self.verb_object1_parsed = word
-            elif word in data.namesAndObjects.list_of_objects and not self.item1_parsed:
-                self.item1_parsed = word
-            elif word in data.namesAndObjects.list_of_locations and not self.location1_parsed:
-                self.location1_parsed = word
-            else:
-                self.unprocessed_parsed.append(word)
+    # def compare_sentence(self):
+    #     for word in self.sentence:
+    #         if word in data.namesAndObjects.list_of_names and not self.verb_subject_parsed:
+    #             self.verb_subject_parsed = word
+    #         elif word in data.namesAndObjects.list_of_names and not self.verb_object1_parsed:
+    #             self.verb_object1_parsed = word
+    #         elif word in data.namesAndObjects.list_of_items and not self.item1_parsed:
+    #             self.item1_parsed = word
+    #         elif word in data.namesAndObjects.list_of_locations and not self.location1_parsed:
+    #             self.location1_parsed = word
+    #         else:
+    #             self.unprocessed_parsed.append(word)
 
 
 class Move(Verb):
     # Agent, Object, Location, Agent2
-    def __init__(self,  *args):
+    def __init__(self, *args):
         super().__init__(*args)
         self.action = "Move"
 
@@ -319,7 +340,6 @@ class Bring(Verb):
     def print_utterance(self):
         super().print_utterance()
 
-
 # def create_global_event_object(no_names, no_objects, no_location):
 #     dataobj = data.namesAndObjects
 #     name = dataobj.random_name_generator(dataobj, no_names)
@@ -340,14 +360,14 @@ class Bring(Verb):
 
 
 # if __name__ == '__main__':
-    # returned_things = y.return_object()
-    # print("Returned", returned_things)
-    # move_event = Move(name1, object1, name2)
-    # move_event.print_utterance()
+# returned_things = y.return_object()
+# print("Returned", returned_things)
+# move_event = Move(name1, object1, name2)
+# move_event.print_utterance()
 
-    # returned_obj = create_global_event_object(2, 2, 2)
-    #
+# returned_obj = create_global_event_object(2, 2, 2)
+#
 
 
-    # give_event = Give(object1, name1, name2)
-    # returned_obj.print_utterance()
+# give_event = Give(object1, name1, name2)
+# returned_obj.print_utterance()
