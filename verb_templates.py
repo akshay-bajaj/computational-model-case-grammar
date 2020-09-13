@@ -28,7 +28,6 @@ class Verb:
 
         # Variables for listener-role to utilise when parsing sentence and later compare to internal representation
         self.unprocessed = []
-        self.unprocessed_labeled = {}
 
         self.verb_subject_parsed = None
         self.verb_object1_parsed = None
@@ -50,12 +49,16 @@ class Verb:
         self.case_item2 = {}
         self.case_location1 = {}
         self.case_location2 = {}
+        self.case_markers_used = {}
+        self.unprocessed_parsed = []
+
 
         # These might not be required but keeping for now
         self.processed_names = []
         self.processed_objects = []
         self.processed_locations = []
-        self.unprocessed_parsed = []
+        # self.unprocessed_labeled = {}
+
 
     # Common methods used in both contexts
 
@@ -116,6 +119,28 @@ class Verb:
             return 0
         else:
             return 1
+
+    # 3. Reset all transient values at the end of iteration
+    def reset_transient_values(self):
+        # self.action_verb = None
+        self.sentence = []
+        self.verb_subject = None
+        self.verb_object1 = None
+        self.verb_object2 = None
+        self.item1 = None
+        self.item2 = None
+        self.location1 = None
+        self.location2 = None
+        self.unprocessed = []
+        self.verb_subject_parsed = None
+        self.verb_object1_parsed = None
+        self.verb_object2_parsed = None
+        self.item1_parsed = None
+        self.item2_parsed = None
+        self.location1_parsed = None
+        self.location2_parsed = None
+        self.case_markers_used = {}
+        self.unprocessed_parsed = []
 
     # Speaker role methods:
 
