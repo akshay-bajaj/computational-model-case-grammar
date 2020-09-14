@@ -52,13 +52,11 @@ class Verb:
         self.case_markers_used = {}
         self.unprocessed_parsed = []
 
-
         # These might not be required but keeping for now
         self.processed_names = []
         self.processed_objects = []
         self.processed_locations = []
         # self.unprocessed_labeled = {}
-
 
     # Common methods used in both contexts
 
@@ -79,6 +77,8 @@ class Verb:
                 elif word in data.namesAndObjects.list_of_locations:
                     list_of_locations.append(word)
 
+                # elif word == self.action_verb:
+                #     continue
                 else:
                     self.unprocessed_parsed.append(word)
 
@@ -122,7 +122,6 @@ class Verb:
 
     # 3. Reset all transient values at the end of iteration
     def reset_transient_values(self):
-        # self.action_verb = None
         self.sentence = []
         self.verb_subject = None
         self.verb_object1 = None
@@ -143,7 +142,6 @@ class Verb:
         self.unprocessed_parsed = []
 
     # Speaker role methods:
-
     # 1. Create a new marker for a role when ambiguity detected and no markers exist in the dictionary
     # Returns a two alphabet string value
     def create_new_case_marker(self):
@@ -180,6 +178,8 @@ class Verb:
             self.sentence.append(self.item1)
         if self.item2:
             self.sentence.append(self.item2)
+        # if self.action_verb:
+        #     self.sentence.append(self.action_verb)
         self.sentence = random.sample(self.sentence, len(self.sentence))
 
     # 4. If check agreement is false, locate the roles which have potential for ambiguity and returns them in a list
@@ -195,7 +195,7 @@ class Verb:
         if self.location1 != self.location1_parsed:
             ambiguous_roles.append("location1")
         if self.location2 != self.location2_parsed:
-            ambiguous_roles.append("Location2")
+            ambiguous_roles.append("location2")
 
         if self.item1 != self.item1_parsed:
             ambiguous_roles.append("item1")
@@ -208,7 +208,7 @@ class Verb:
     def apply_case_marker_correction(self, marker, component_to_mark):
         for index in range(len(self.sentence)):
             if self.sentence[index] == eval("self." + component_to_mark):
-                self.sentence.insert(index+1, marker)
+                self.sentence.insert(index + 1, marker)
 
     # print_utterance displays the composed sentence on the screen. Only used for testing purposes
     def print_utterance(self):
@@ -252,11 +252,6 @@ class Verb:
     # word order serialisation & case markers
     # def incorporate_assertion(self, asserted_value):
 
-    # Listener role methods
-
-    # To-do methods
-    #     Parse and look for unknown words that are case markers. If found and context of them understood,
-    #     add them to marker for the respective action-verb-object.
 
     # Following two methods are redundant and possibly not required
     def label_unprocessed(self):
@@ -297,7 +292,7 @@ class Move(Verb):
     # Agent, Object, Location, Agent2
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Move"
+        self.action_verb = "Move"
 
     def print_utterance(self):
         super().print_utterance()
@@ -306,7 +301,7 @@ class Move(Verb):
 class Give(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Give"
+        self.action_verb = "Give"
 
     def print_utterance(self):
         super().print_utterance()
@@ -315,7 +310,7 @@ class Give(Verb):
 class Take(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Take"
+        self.action_verb = "Take"
 
     def print_utterance(self):
         super().print_utterance()
@@ -324,7 +319,7 @@ class Take(Verb):
 class Touch(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Touch"
+        self.action_verb = "Touch"
 
     def print_utterance(self):
         super().print_utterance()
@@ -333,7 +328,7 @@ class Touch(Verb):
 class Drop(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Drop"
+        self.action_verb = "Drop"
 
     def print_utterance(self):
         super().print_utterance()
@@ -342,7 +337,7 @@ class Drop(Verb):
 class Lift(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Lift"
+        self.action_verb = "Lift"
 
     def print_utterance(self):
         super().print_utterance()
@@ -351,7 +346,7 @@ class Lift(Verb):
 class Put(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Put"
+        self.action_verb = "Put"
 
     def print_utterance(self):
         super().print_utterance()
@@ -360,39 +355,7 @@ class Put(Verb):
 class Bring(Verb):
     def __init__(self, *args):
         super().__init__(*args)
-        self.action = "Bring"
+        self.action_verb = "Bring"
 
     def print_utterance(self):
         super().print_utterance()
-
-# def create_global_event_object(no_names, no_objects, no_location):
-#     dataobj = data.namesAndObjects
-#     name = dataobj.random_name_generator(dataobj, no_names)
-#     for i in range(len(name)):
-#         locals()["name"+str(i+1)] = name[i]
-#
-#     object = dataobj.random_object_generator(dataobj, no_objects)
-#     for i in range(len(object)):
-#         locals()["object"+str(i+1)] = object[i]
-#     location = dataobj.random_surface_generator(dataobj, no_location)
-#
-#     for i in range(len(location)):
-#         locals()["location"+str(i+1)] = location[i]
-#     event_selected = random.sample(verb_list, 1)
-#     event_selected = event_selected[0]
-#     event_object = eval(event_selected)(name, object, location)
-#     return event_object
-
-
-# if __name__ == '__main__':
-# returned_things = y.return_object()
-# print("Returned", returned_things)
-# move_event = Move(name1, object1, name2)
-# move_event.print_utterance()
-
-# returned_obj = create_global_event_object(2, 2, 2)
-#
-
-
-# give_event = Give(object1, name1, name2)
-# returned_obj.print_utterance()

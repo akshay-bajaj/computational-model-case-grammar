@@ -3,6 +3,7 @@ from mesa import Agent, Model
 from mesa.time import BaseScheduler
 import random
 import verb_templates
+import matplotlib.pyplot as plt
 
 global active_agents
 global speaker_listener_toggle
@@ -11,8 +12,7 @@ global first_turn_speaker
 agreement_matrix = []
 global language_game_success
 
-# TODO lateral inhibition implementation for listener
-# TODO verify the transient variable reset is correct at end of each iteration
+
 # TODO Track data over iterations and plot it
 # TODO add verb name to sentence
 
@@ -23,9 +23,6 @@ class CreateWorldEvent:
     # They set names in variables that represent shared internal representation between agents for a world event
     def __init__(self, no_of_names, no_of_items, no_of_location):
         dataobj = data.namesAndObjects
-        #
-        # event_selected = random.sample(verb_templates.verb_list, 1)  # Select the action verb event at random
-        # event_selected = event_selected[0]
 
         list_of_names = []
         list_of_items = []
@@ -72,7 +69,7 @@ class ConversationAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.agree = False
-        # Initial cognitive linguistic abilities of the agents which are same for all agents in the beginning
+        # Initial cognitive abilities of the agents which are same for all agents in the beginning
         self.move_model_obj = verb_templates.Move()
         self.give_model_obj = verb_templates.Give()
         self.take_model_obj = verb_templates.Take()
@@ -87,20 +84,36 @@ class ConversationAgent(Agent):
         active_event = world_event_object.event_selected
         if active_event == 'Move':
             return self.move_model_obj
-        if active_event == 'Give':
+        elif active_event == 'Give':
             return self.give_model_obj
-        if active_event == 'Take':
+        elif active_event == 'Take':
             return self.take_model_obj
-        if active_event == 'Touch':
+        elif active_event == 'Touch':
             return self.touch_model_obj
-        if active_event == 'Drop':
+        elif active_event == 'Drop':
             return self.drop_model_obj
-        if active_event == 'Lift':
+        elif active_event == 'Lift':
             return self.lift_model_obj
-        if active_event == 'Put':
+        elif active_event == 'Put':
             return self.put_model_obj
-        if active_event == 'Bring':
+        elif active_event == 'Bring':
             return self.bring_model_obj
+
+    def incorporate_game_outcome_speaker(self):
+        active_verb_object = self.get_active_verb_object()
+        if language_game_success:
+            # Locate what the markers were marking and increase score by 0.1 in the relevant section
+            for marker in active_verb_object.case_markers_used.keys():
+                relevant_case_dict = eval('active_verb_object.' + active_verb_object.case_markers_used[marker])
+                relevant_case_dict[marker] += 0.1
+                # Lateral inhibition decreases scores of all other markers for the same role by 0.1
+                for case_markers in relevant_case_dict.keys():
+                    if case_markers != marker:
+                        relevant_case_dict[case_markers] -= 0.1
+        print("Speaker second context")
+        # Else if language game failed, do nothing
+        # Reset all transient values for speaker at end of iteration
+        active_verb_object.reset_transient_values()
 
     def step(self):
         # For agent to understand its activation context
@@ -116,15 +129,13 @@ class ConversationAgent(Agent):
         # Flag for first/second context for speaker
         global first_turn_speaker
 
-        print(self.unique_id)
-
         # Check if it is the speaker context. This code block contains speaker tasks for the first iteration of speaker.
         if speaker_listener_toggle != 1:
             print("Speaker first context")
             speaker_listener_toggle = 1
             active_verb_object = self.get_active_verb_object()
-            active_verb_object.set_parameters_from_world_event(world_event_object)  # Values of subject, object etc
-            # reflect world event
+            # Values of subject, object etc reflect world event
+            active_verb_object.set_parameters_from_world_event(world_event_object)
             active_verb_object.create_sentence()
             # Self diagnostic by speaker is required to detect possible ambiguity
             # The speaker parses its own sentence as a first step
@@ -136,12 +147,14 @@ class ConversationAgent(Agent):
             if internal_self_diagnostic_speaker == 0:
                 ambiguous_roles = active_verb_object.find_ambiguous_roles()
 
+                # TODO Ask hk if existing markers for roles should be applied de-facto even if ambiguity isn't found
+                #  so they converge better
                 # Check individual roles for existing markers
                 if "verb_subject" in ambiguous_roles:
-                    # If there is no marker, create a new random marker and set score to 0.5
+                    # If there is no marker, create a new random marker and set score to 0.1
                     if not active_verb_object.case_verb_subject:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_verb_subject[chosen_marker] = 0.5
+                        active_verb_object.case_verb_subject[chosen_marker] = 0.1
 
                     # Instance when existing markers exist, choose one with the highest value
                     else:
@@ -154,7 +167,7 @@ class ConversationAgent(Agent):
                 if "verb_object1" in ambiguous_roles:
                     if not active_verb_object.case_verb_object1:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_verb_object1[chosen_marker] = 0.5
+                        active_verb_object.case_verb_object1[chosen_marker] = 0.1
                     else:
                         chosen_marker = max(active_verb_object.case_verb_object1,
                                             key=active_verb_object.case_verb_object1.get)
@@ -164,7 +177,7 @@ class ConversationAgent(Agent):
                 if "verb_object2" in ambiguous_roles:
                     if not active_verb_object.case_verb_object2:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_verb_object2[chosen_marker] = 0.5
+                        active_verb_object.case_verb_object2[chosen_marker] = 0.1
                     else:
                         chosen_marker = max(active_verb_object.case_verb_object2,
                                             key=active_verb_object.case_verb_object2.get)
@@ -175,7 +188,7 @@ class ConversationAgent(Agent):
                 if "item1" in ambiguous_roles:
                     if not active_verb_object.case_item1:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_item1[chosen_marker] = 0.5
+                        active_verb_object.case_item1[chosen_marker] = 0.1
                     else:
                         chosen_marker = max(active_verb_object.case_item1,
                                             key=active_verb_object.case_item1.get)
@@ -184,17 +197,17 @@ class ConversationAgent(Agent):
                 if "item2" in ambiguous_roles:
                     if not active_verb_object.case_item2:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_item2[chosen_marker] = 0.5
+                        active_verb_object.case_item2[chosen_marker] = 0.1
                     else:
                         chosen_marker = max(active_verb_object.case_item2,
                                             key=active_verb_object.case_item2.get)
                     active_verb_object.apply_case_marker_correction(chosen_marker, "item2")
                     active_verb_object.case_markers_used[chosen_marker] = 'case_item2'
-                #     For locations
+                # For locations
                 if "location1" in ambiguous_roles:
                     if not active_verb_object.case_location1:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_location1[chosen_marker] = 0.5
+                        active_verb_object.case_location1[chosen_marker] = 0.1
                     else:
                         chosen_marker = max(active_verb_object.case_location1,
                                             key=active_verb_object.case_location1.get)
@@ -203,7 +216,7 @@ class ConversationAgent(Agent):
                 if "location2" in ambiguous_roles:
                     if not active_verb_object.case_location2:
                         chosen_marker = active_verb_object.create_new_case_marker()
-                        active_verb_object.case_location2[chosen_marker] = 0.5
+                        active_verb_object.case_location2[chosen_marker] = 0.1
                     else:
                         chosen_marker = max(active_verb_object.case_location2,
                                             key=active_verb_object.case_location2.get)
@@ -215,12 +228,11 @@ class ConversationAgent(Agent):
         # This code block contains listener context. It should also add any unprocessed markers
         # to the dictionary of markers.
         elif speaker_listener_toggle == 1 and first_turn_speaker:
-
             # Find the corresponding internal representation for the action-verb
             active_verb_object = self.get_active_verb_object()
             # Assign actual values based on world event
             active_verb_object.set_parameters_from_world_event(world_event_object)
-            # TODO change the logic of sentence parsing if it detects markers
+
             active_verb_object.parse_sentence_guess(sentence_communicated)
 
             parsing_success_agreement = active_verb_object.check_agreement()
@@ -228,12 +240,12 @@ class ConversationAgent(Agent):
 
             # Language game was a success
             if parsing_success_agreement:
-                # TODO Check if unprocessed markers exist and add the case markers to respective roles or
+                # TODO ask HK if I should change the logic of sentence parsing if it detects markers and adjust
+                #  scores again for the listener and add new markers to the list
                 # augment confidence scores
                 language_game_success = 1
 
             # language game was a failure
-            # TODO verify this logic
             else:
                 # Check if number of markers found equal number of unsolved variable inequalities
                 if len(ambiguous_roles) == len(active_verb_object.unprocessed_parsed):
@@ -247,29 +259,31 @@ class ConversationAgent(Agent):
                             for i in range(len(sentence_communicated)):
                                 # Iterate to current marker in the sentence
                                 if sentence_communicated[i] == marker:
-                                    # Check if 1. marker exists in dictionary for current ambiguous role
-                                    # 2. Preceding word in sentence is the same role as current ambiguous role
+                                    # Check if 1. Preceding word in sentence is the same role as current ambiguous role
                                     if sentence_communicated[i - 1] == eval('active_verb_object.' + ambiguous_role):
+                                        eval('active_verb_object.case_' + ambiguous_role)['aa'] = 0.3
+                                        eval('active_verb_object.case_' + ambiguous_role)['bb'] = 0.4
                                         # Check if marker already exists in marker dict. for current role
-                                        if marker in eval('active_verb_object.case_' + ambiguous_role):
-                                            # current_case_dictionary = "active_verb_object.case_" + ambiguous_role
-                                            # relevant_marker_path = eval(current_case_dictionary)
+                                        if marker in eval('active_verb_object.case_' + ambiguous_role).keys():
                                             relevant_marker_path = eval("active_verb_object.case_" + ambiguous_role)
                                             relevant_marker_path[marker] += 0.1
+                                            # Lateral inhibition of other markers
+                                            for case_markers in relevant_marker_path.keys():
+                                                if case_markers != marker:
+                                                    relevant_marker_path[case_markers] -= 0.1
                                             # Remove current amb. role from list because variable equality solved
                                             ambiguous_roles.remove(ambiguous_role)
-                                            # remove the marker from unprocessed list because it is successfully parsed
-                                            # active_verb_object.unprocessed_parsed.remove(marker)
                                             break
 
-                                        # TODO implement lateral inhibition for other markers
-                                        # If marker does not already exist for the relevant role
+                                        # If marker does not already exist for the relevant role, add it to dictionary
                                         else:
                                             current_case_dictionary = "active_verb_object.case_" + ambiguous_role
                                             relevant_marker_path = eval(current_case_dictionary)
-                                            relevant_marker_path[marker] = 0.5
+                                            relevant_marker_path[marker] = 0.1
+                                            for case_markers in relevant_marker_path.keys():
+                                                if case_markers != marker:
+                                                    relevant_marker_path[case_markers] -= 0.1
                                             ambiguous_roles.remove(ambiguous_role)
-                                            # active_verb_object.unprocessed_parsed.remove(marker)
                                             break
                                     else:
                                         break
@@ -288,20 +302,7 @@ class ConversationAgent(Agent):
 
         # This code block contains speaker context after it receives feedback and should modify scores
         elif not first_turn_speaker and speaker_listener_toggle == 1:
-            if language_game_success:
-                active_verb_object = self.get_active_verb_object()
-                # Locate what the markers were marking and increase score by 0.1 in the relevant section
-                for marker in active_verb_object.case_markers_used.keys():
-                    relevant_case_dict = eval('active_verb_object.' + active_verb_object.case_markers_used[marker])
-                    relevant_case_dict[marker] += 0.1
-                    # Lateral inhibition decreases scores of all other markers for the same role by 0.1
-                    for case_markers in relevant_case_dict.keys():
-                        if case_markers != marker:
-                            relevant_case_dict[case_markers] -= 0.1
-                print("Speaker second context")
-            # Else if language game failed, do nothing
-            # Reset all transient values for speaker at end of iteration
-            active_verb_object.reset_transient_values()
+            self.incorporate_game_outcome_speaker()
 
 
 # Model of the world with 'N' agents
@@ -319,31 +320,36 @@ class ConversationModel(Model):
             a = ConversationAgent(i, self)
             self.list_of_agent_objects.append(a)
 
-
     def step(self):
         self.schedule.step()
         print("\n")
 
 
-Language_Model = ConversationModel(10)
-for times_to_iter in range(20):
+no_of_agents = input("Input the number of agents \n")
+no_of_iterations = input("Input the number of iterations to run the model (multiples of 10) \n")
+Language_Model = ConversationModel(int(no_of_agents))
+
+for times_to_iter in range(int(no_of_iterations)):
     language_game_success = 0
     sentence_communicated = []
     first_turn_speaker = True
     print("\n")
     speaker_listener_toggle = 0
-    active_agents = random.sample(range(10), 2)
-    # active_agents.append(active_agents[0])
+    active_agents = random.sample(range(int(no_of_agents)), 2)
     print(active_agents)
 
     # Change this to new class CreateWorldEvent object
-    # TODO randomise the values of number of names, items and locations
-    world_event_object = CreateWorldEvent(3, 2, 1)
+    random_no_of_names = random.randint(1, 3)
+    random_no_of_items = random.randint(0, 2)
+    random_no_of_locations = random.randint(0, 2)
+    world_event_object = CreateWorldEvent(random_no_of_names, random_no_of_items, random_no_of_locations)
+    # world_event_object = CreateWorldEvent(2, 1, 2)
+
     # list_of_names, list_of_items, list_of_locations = create_world_event(2, 1, 1)
     # Global shared context of the event w/ shared internal representation by both agents
 
-    for things in active_agents:
-        Language_Model.schedule.add(Language_Model.list_of_agent_objects[things])
+    for agent in active_agents:
+        Language_Model.schedule.add(Language_Model.list_of_agent_objects[agent])
     Language_Model.step()
     # Remove active agents from schedule for next iteration
     Language_Model.schedule.remove(Language_Model.list_of_agent_objects[active_agents[0]])
@@ -352,9 +358,22 @@ for times_to_iter in range(20):
     Language_Model.schedule.add(Language_Model.list_of_agent_objects[active_agents[0]])
     Language_Model.step()
     Language_Model.schedule.remove(Language_Model.list_of_agent_objects[active_agents[0]])
-#     TODO clear all temporary values in active agents at the end of iteration
 
+# avg = sum(agreement_matrix) / len(agreement_matrix)
+# percent_agreement = avg * 100
+# print("Percentage of times that agents agreed is", int(percent_agreement))
+communicative_success = []
+iteration_index = []
+for index in range(len(agreement_matrix)//10):
+    m = index * 10
+    n = m + 9
+    summation = sum(agreement_matrix[m:n])
+    communicative_success.append(summation/(n - m))
+    iteration_index.append(m)
+    print(summation)
 
-avg = sum(agreement_matrix) / len(agreement_matrix)
-percent_agreement = avg * 100
-print("Percentage of times that agents agreed is", percent_agreement)
+# print(communicative_success)
+plt.plot(iteration_index, communicative_success)
+plt.xlabel("Language games count")
+plt.ylabel("Communicative success")
+plt.show()
