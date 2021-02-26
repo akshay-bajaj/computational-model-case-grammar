@@ -39,8 +39,8 @@ class Verb:
         self.location1_parsed = None
         self.location2_parsed = None
 
-        # These variables are dictionaries used to store all markers with their normalised score for each marker for the given role
-        # format is {'ko' = 0.3, 'ne' = 0.6}
+        # These variables are dictionaries used to store all markers with their normalised score for each marker for
+        # the given role format is {'ko' = 0.3, 'ne' = 0.6}
         self.case_verb_subject = {}
         self.case_verb_object1 = {}
         self.case_verb_object2 = {}
@@ -251,7 +251,6 @@ class Verb:
     # ...this value update should contain a score based on time decay for choosing between
     # word order serialisation & case markers
     # def incorporate_assertion(self, asserted_value):
-
 
     # Following two methods are redundant and possibly not required
     def label_unprocessed(self):

@@ -110,7 +110,6 @@ class ConversationAgent(Agent):
                 for case_markers in relevant_case_dict.keys():
                     if case_markers != marker:
                         relevant_case_dict[case_markers] -= 0.1
-        print("Speaker second context")
         # Else if language game failed, do nothing
         # Reset all transient values for speaker at end of iteration
         active_verb_object.reset_transient_values()
@@ -261,8 +260,8 @@ class ConversationAgent(Agent):
                                 if sentence_communicated[i] == marker:
                                     # Check if 1. Preceding word in sentence is the same role as current ambiguous role
                                     if sentence_communicated[i - 1] == eval('active_verb_object.' + ambiguous_role):
-                                        eval('active_verb_object.case_' + ambiguous_role)['aa'] = 0.3
-                                        eval('active_verb_object.case_' + ambiguous_role)['bb'] = 0.4
+                                        # eval('active_verb_object.case_' + ambiguous_role)['aa'] = 0.3
+                                        # eval('active_verb_object.case_' + ambiguous_role)['bb'] = 0.4
                                         # Check if marker already exists in marker dict. for current role
                                         if marker in eval('active_verb_object.case_' + ambiguous_role).keys():
                                             relevant_marker_path = eval("active_verb_object.case_" + ambiguous_role)
