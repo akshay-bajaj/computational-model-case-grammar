@@ -20,8 +20,8 @@ class namesAndObjects:
             names_generated = random.sample(self.list_of_names, n)
             return names_generated
 
-    list_of_items = ["Pen", "Diary", "Bottle", "Glasses", "Watch", "Camera", "Brush", "Credit Card", "Key",
-                     "Mobile Phone", "Wallet", "Umbrella", "Pencil", "Lighter", "Purse", "Scissors", "Passport",
+    list_of_items = ["Pen", "Diary", "Bottle", "Glasses", "Watch", "Camera", "Brush", "Credit-Card", "Key",
+                     "Mobile-Phone", "Wallet", "Umbrella", "Pencil", "Lighter", "Purse", "Scissors", "Passport",
                      "Comb", "Notebook", "Laptop", "Headphone", "Magazine"]
 
     def random_object_generator(self, n):

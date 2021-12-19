@@ -4,3 +4,4 @@ backup_verb_template.py
 venv/
 .idea/
 Thesis.2.0/
+.DS_Store
